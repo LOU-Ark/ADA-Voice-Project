@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI音声モデル「エイダ」開発プロジェクト | インタラクティブレポート</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals (Stone, Teal Accent) -->
+    <!-- Application Structure Plan: A single-page dashboard with sticky sidebar navigation (Overview, Plan, Journey, Deliverables). This thematic structure transforms the static project report into an explorable story, prioritizing user flow over the original document's linear order. Key interactions include a collapsible WBS, a dynamic Gantt-style chart for the schedule, and an interactive timeline for the issue log, making the project's process and challenges easily digestible. Gemini API features for summary and issue analysis are added to transform the report into a learning and analysis tool. A new "Procedures" section with copyable commands is added to the Plan section for practical reproducibility. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: WBS -> Goal: Organize -> Viz: Interactive collapsible list (HTML/JS) -> Interaction: Click to expand/collapse phases -> Justification: Manages complexity of the hierarchical data.
+        - Report Info: Schedule -> Goal: Visualize Time -> Viz: Horizontal Bar Chart (Chart.js Canvas) -> Interaction: Hover for details -> Justification: Provides an intuitive Gantt-like view of the project timeline.
+        - Report Info: Issue Log -> Goal: Tell a Story -> Viz: Vertical Timeline Cards (HTML/CSS) -> Interaction: Click to reveal resolution, Click "Analyze with AI" button -> Justification: Transforms a dense table into an engaging narrative and a learning tool via Gemini API.
+        - Report Info: Project Data Synthesis -> Goal: Analyze & Summarize -> Viz: Modal with AI-generated text -> Interaction: Button click to generate project post-mortem -> Justification: Provides high-level insights on demand using Gemini API.
+        - Report Info: Work Procedures -> Goal: Instruct -> Viz: List of command blocks (HTML/JS) -> Interaction: Copy-to-clipboard button -> Justification: Provides actionable steps for reproducing the project. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #334155; /* slate-700 */
+        }
+        .section-title {
+            border-bottom: 2px solid #0d9488; /* teal-600 */
+        }
+        .nav-link.active {
+            background-color: #ccfbf1; /* teal-100 */
+            color: #0f766e; /* teal-700 */
+            font-weight: 700;
+        }
+        .wbs-toggle::before {
+            content: '▶';
+            display: inline-block;
+            margin-right: 0.5rem;
+            transition: transform 0.2s;
+            font-size: 0.7em;
+        }
+        .wbs-toggle.open::before {
+            transform: rotate(90deg);
+        }
+        .issue-card {
+            transition: all 0.3s ease;
+            border-left-width: 4px;
+        }
+        .issue-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 500px;
+            max-height: 70vh;
+        }
+        .modal-bg {
+            transition: opacity 0.3s ease;
+        }
+        .modal-content {
+            transition: all 0.3s ease;
+        }
+        .spinner {
+            border-color: #f3f3f3;
+            border-top-color: #0d9488;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .code-block {
+            position: relative;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background-color: #e2e8f0;
+            color: #475569;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .copy-btn:hover {
+            background-color: #cbd5e1;
+        }
+        .code-path {
+            color: #94a3b8; /* slate-400 */
+            -webkit-user-select: none; /* Safari */
+            -ms-user-select: none; /* IE 10+ */
+            user-select: none; /* Standard syntax */
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-slate-800">AI音声モデル「エイダ」開発プロジェクト</h1>
+            <p class="mt-4 text-lg text-slate-600">インタラクティブ・プロジェクトレポート</p>
+        </header>
+
+        <div class="lg:grid lg:grid-cols-4 lg:gap-8">
+            <nav id="sidebar" class="lg:col-span-1 lg:sticky top-8 self-start mb-8 lg:mb-0">
+                <ul class="space-y-2">
+                    <li><a href="#ai-insights" class="nav-link block p-3 rounded-lg hover:bg-slate-200 transition-colors">✨ AI分析</a></li>
+                    <li><a href="#overview" class="nav-link block p-3 rounded-lg hover:bg-slate-200 transition-colors">プロジェクト概要</a></li>
+                    <li><a href="#plan" class="nav-link block p-3 rounded-lg hover:bg-slate-200 transition-colors">プロジェクト計画</a></li>
+                    <li><a href="#journey" class="nav-link block p-3 rounded-lg hover:bg-slate-200 transition-colors">開発の軌跡（課題管理）</a></li>
+                    <li><a href="#deliverables" class="nav-link block p-3 rounded-lg hover:bg-slate-200 transition-colors">最終成果物</a></li>
+                </ul>
+            </nav>
+
+            <main class="lg:col-span-3 space-y-16">
+                
+                <section id="ai-insights">
+                    <h2 class="section-title text-3xl font-bold pb-2 mb-6 text-slate-800">✨ AIによる分析</h2>
+                    <p class="mb-6 text-slate-600 leading-relaxed">
+                        このレポートのデータを活用し、Gemini APIによるAI分析を体験できます。プロジェクト全体のサマリーを生成したり、各開発課題の詳細な分析を行ったりすることが可能です。
+                    </p>
+                    <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-teal-500">
+                        <h3 class="text-xl font-bold mb-3 text-slate-700">プロジェクト総括レポート生成</h3>
+                        <p class="text-slate-600 mb-4">プロジェクト全体の計画、スケジュール、発生した課題を基に、AIがポストモーテム（事後検証）レポートを生成します。</p>
+                        <button id="generate-summary-btn" class="bg-teal-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-teal-700 transition-colors">
+                            ✨ AIによるプロジェクトサマリーを生成
+                        </button>
+                    </div>
+                </section>
+
+                <section id="overview">
+                    <h2 class="section-title text-3xl font-bold pb-2 mb-6 text-slate-800">プロジェクト概要</h2>
+                    <p class="mb-8 text-slate-600 leading-relaxed">
+                        このプロジェクトの目的は、特定のキャラクター「エイダ」の声質を忠実に再現した高品質な日本語テキスト読み上げ(TTS)モデルを構築することです。動画ナレーション等の創作活動への活用と、AI音声合成技術の実践的学習を背景に、VITSモデルと関連ドキュメント群を主要な成果物として開発を進めました。
+                    </p>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-teal-500">
+                            <h3 class="text-xl font-bold mb-3 text-slate-700">機能要件</h3>
+                            <ul class="list-disc list-inside space-y-2 text-slate-600">
+                                <li>音声データの形式変換 (22050Hz, モノラル)</li>
+                                <li>メタデータ自動生成 (`ファイル名|文章|文章`形式)</li>
+                                <li>テキストのひらがな化</li>
+                                <li>Coqui-TTSによるVITSモデル学習</li>
+                                <li>任意テキストからの音声合成 (WAV出力)</li>
+                            </ul>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-amber-500">
+                            <h3 class="text-xl font-bold mb-3 text-slate-700">非機能要件</h3>
+                            <ul class="list-disc list-inside space-y-2 text-slate-600">
+                                <li><strong>OS:</strong> Ubuntu Linux 22.04</li>
+                                <li><strong>ハードウェア:</strong> NVIDIA製GPU必須</li>
+                                <li><strong>ソフトウェア:</strong> Python 3.10, Coqui-TTS</li>
+                                <li><strong>品質:</strong> ノイズが少なく明瞭な音声</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="plan">
+                    <h2 class="section-title text-3xl font-bold pb-2 mb-6 text-slate-800">プロジェクト計画</h2>
+                    <p class="mb-8 text-slate-600 leading-relaxed">
+                        プロジェクトは、WBS(作業分解構成図)に基づき計画されました。各タスクのスケジュールは以下のタイムラインで示され、プロジェクト全体の流れと期間を可視化しています。具体的な作業手順も含まれており、プロジェクトの再現性を高めます。
+                    </p>
+                    <div class="space-y-8">
+                        <div class="bg-white p-6 rounded-lg shadow-md">
+                            <h3 class="text-xl font-bold mb-4 text-slate-700">WBS (作業分解構成図)</h3>
+                            <p class="text-sm text-slate-500 mb-4">クリックで詳細を展開/折りたたみ</p>
+                            <ul id="wbs-list" class="space-y-2 text-slate-600">
+                            </ul>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-md">
+                            <h3 class="text-xl font-bold mb-4 text-slate-700">具体的な作業手順</h3>
+                            <div id="procedures-container" class="space-y-4">
+                                <!-- Procedures will be injected by JS -->
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-md">
+                            <h3 class="text-xl font-bold mb-4 text-slate-700">作業計画タイムライン</h3>
+                            <div class="chart-container">
+                                <canvas id="scheduleChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="journey">
+                    <h2 class="section-title text-3xl font-bold pb-2 mb-6 text-slate-800">開発の軌跡（課題管理）</h2>
+                    <p class="mb-12 text-slate-600 leading-relaxed">
+                        プロジェクトは一直線には進みませんでした。環境構築からデータ準備、モデル学習に至るまで、様々な課題が発生しました。以下のタイムラインは、それらの課題と解決策の全記録であり、このプロジェクトのリアルな開発の道のりを示しています。
+                    </p>
+                    <div id="issue-timeline" class="relative border-l-2 border-slate-300 ml-4">
+                    </div>
+                </section>
+
+                <section id="deliverables">
+                    <h2 class="section-title text-3xl font-bold pb-2 mb-6 text-slate-800">最終成果物</h2>
+                    <p class="mb-8 text-slate-600 leading-relaxed">
+                        数々の課題を乗り越え、プロジェクトは当初の目的を達成しました。最終的な成果物は、高品質なカスタム音声モデルとその開発プロセスを体系化した一連のドキュメント群です。
+                    </p>
+                    <div class="bg-white p-8 rounded-lg shadow-lg flex items-center space-x-6 border-l-4 border-teal-500">
+                        <div class="text-4xl">🏆</div>
+                        <div>
+                            <h3 class="text-2xl font-bold text-slate-800">完成した成果物</h3>
+                            <ul class="mt-2 list-disc list-inside text-slate-600 space-y-1">
+                                <li>学習済みVITSモデルファイル (`.pth`)</li>
+                                <li>モデル設定ファイル (`config.json`)</li>
+                                <li>全工程を記録したプロジェクトドキュメント群</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="ai-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+        <div class="modal-bg fixed inset-0 bg-black bg-opacity-50 opacity-0"></div>
+        <div class="modal-content bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col transform scale-95 opacity-0">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h3 id="modal-title" class="text-xl font-bold text-slate-800">AIによる分析結果</h3>
+                <button id="modal-close-btn" class="text-2xl text-slate-500 hover:text-slate-800">&times;</button>
+            </div>
+            <div id="modal-body" class="p-6 overflow-y-auto">
+                <div class="flex justify-center items-center h-32">
+                    <div class="spinner w-12 h-12 rounded-full border-4"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            const wbsData = [
+                { id: 1, name: 'プロジェクト管理', children: [ { id: 1.1, name: '計画立案' }, { id: 1.2, name: '進捗・課題管理' } ]},
+                { id: 2, name: '開発環境構築', children: [ { id: 2.1, name: 'OS環境設定' }, { id: 2.2, name: 'Pythonプロジェクト環境設定' }, { id: 2.3, name: 'Coqui-TTS環境設定' } ]},
+                { id: 3, name: '学習データ準備', children: [ { id: 3.1, name: '音声データ収集・整理' }, { id: 3.2, name: '音声データ加工' }, { id: 3.3, name: 'メタデータ作成' } ]},
+                { id: 4, name: 'モデル学習', children: [ { id: 4.1, name: '学習設定' }, { id: 4.2, name: '学習実行' }, { id: 4.3, name: 'モデル評価' } ]},
+                { id: 5, name: '音声合成（推論）', children: [ { id: 5.1, name: '推論実行と品質評価' } ]},
+                { id: 6, name: 'プロジェクト完了', children: [ { id: 6.1, name: '成果物の保管' }, { id: 6.2, name: 'プロジェクトの振り返り' } ]}
+            ];
+
+            const scheduleData = [
+                { task: '開発環境構築', start: '2025-07-30', end: '2025-07-30' },
+                { task: '学習データ準備', start: '2025-07-31', end: '2025-07-31' },
+                { task: '学習設定', start: '2025-08-01', end: '2025-08-01' },
+                { task: '学習実行', start: '2025-08-01', end: '2025-08-07' },
+                { task: 'モデル評価', start: '2025-08-08', end: '2025-08-08' },
+                { task: '音声合成（推論）', start: '2025-08-08', end: '2025-08-08' },
+                { task: 'プロジェクト完了', start: '2025-08-09', end: '2025-08-09' }
+            ];
+
+            const issueData = [
+                { id: '001', title: '`apt update`のネットワークエラー', desc: '進行に影響なしと判断し、作業を継続。' },
+                { id: '002', title: 'メタデータのクリーニングが不完全', desc: 'テキストを整形するスクリプトを改善。' },
+                { id: '003', title: '`config.json`の設定項目不足', desc: '設定生成スクリプトを修正し、不足項目を追加。' },
+                { id: '004', title: 'データ形式とフォーマッターの不整合', desc: 'データをフォーマッターが期待する3列形式に変換して解決。' },
+                { id: '005', title: 'ファイルパスの拡張子二重付与', desc: 'メタデータの1列目から`.wav`を削除して解決。' },
+                { id: '006', title: '`sed`コマンドがファイル名を破損', desc: 'コマンドの欠陥を特定し、全データを再生成するスクリプトで解決。' },
+                { id: '007', title: 'プログラム内部のパスハードコード問題', desc: 'プログラムの仕様に合わせてディレクトリ構造と設定を修正。' },
+                { id: '008', title: 'データセットのステレオ音声混入', desc: '全音声ファイルを強制的にモノラルに再変換して解決。' },
+                { id: '009', title: '`metadata.csv`が1行になる問題', desc: 'シェルスクリプトの欠陥を特定し、改行を破壊しないPythonスクリプトに置き換えて解決。' },
+                { id: '010', title: 'チェックポイントファイル破損', desc: '破損した最新のチェックポイントを削除し、一つ前のバックアップから学習を再開。' },
+                { id: '011', title: '学習ログの表示問題', desc: 'プロジェクトを完全にリセットし、ファイル名のリネームを含む最終版のデータ準備スクリプトを実行して解決。' }
+            ];
+
+            const proceduresData = [
+                {
+                    phase: '作業場所について（プロジェクトルート）',
+                    isIntro: true,
+                    description: 'この手順書では、全ての作業はユーザーのホームディレクトリから開始することを推奨します。ホームディレクトリは `~` で表され、ターミナルでは `root@hostname:~#` のように表示されます。Windows PCのデスクトップ（WSL2からは `/mnt/c/Users/[YourUsername]/Desktop`）でも可能ですが、ホームディレクトリが一般的です。'
+                },
+                {
+                    phase: 'フェーズ1: 環境構築',
+                    steps: [
+                        { title: 'システム更新とパッケージインストール', description: 'システムを最新化し、Pythonや音声処理に必要なツールを導入します。', path: 'root@hostname:~#', command: 'sudo apt update && sudo apt install python3.10 python3.10-venv python3-pip git git-lfs ffmpeg kakasi -y' },
+                        { title: 'プロジェクトディレクトリ作成と移動', description: '作業ファイルを集約する専用のフォルダを作成し、そこに移動します。', path: 'root@hostname:~#', command: 'mkdir ~/TTS_Project && cd ~/TTS_Project' },
+                        { title: 'Python仮想環境の作成と有効化', description: 'プロジェクト専用のPython環境を分離し、有効化します。', path: 'root@hostname:~/TTS_Project#', command: 'python3.10 -m venv tts_env\nsource tts_env/bin/activate' },
+                        { title: 'TTSライブラリとソースコードの準備', description: '音声合成ライブラリ本体と、学習用スクリプトを準備します。', path: '(tts_env) root@hostname:~/TTS_Project#', command: 'pip install TTS\ngit clone https://github.com/coqui-ai/TTS.git' }
+                    ]
+                },
+                {
+                    phase: 'フェーズ2: データ準備',
+                    steps: [
+                        { title: '元データ用ディレクトリ作成', description: 'オリジナルの音声ファイルを保管するための置き場所を作成します。', path: '(tts_env) root@hostname:~/TTS_Project#', command: 'mkdir -p TTS/my_ada_voice/wavs_original' },
+                        { title: '元データをコピー', description: '用意した音声ファイルを、プロジェクト内の所定の場所にコピーします。', path: '(tts_env) root@hostname:~/TTS_Project#', command: 'cp /path/to/your/wavs/*.wav TTS/my_ada_voice/wavs_original/' },
+                        { title: 'データ準備スクリプト実行', description: '音声のリネームと整形、テキスト抽出を全自動で行うスクリプトです。', path: '(tts_env) root@hostname:~/TTS_Project#', command: 'cd TTS/my_ada_voice\n(tts_env) root@hostname:~/TTS_Project/TTS/my_ada_voice# python3 rebuild_metadata.py' }
+                    ]
+                },
+                {
+                    phase: 'フェーズ3: 学習',
+                    steps: [
+                        { title: '設定ファイル生成', description: 'AIに学習方法を指示する設計図（config.json）を自動生成します。', path: '(tts_env) root@hostname:~/TTS_Project/TTS/my_ada_voice#', command: 'cd ~/TTS_Project/TTS\n(tts_env) root@hostname:~/TTS_Project/TTS# python create_config.py' },
+                        { title: '学習開始', description: '作成したデータと設定を使い、モデルの学習をゼロから開始します。', path: '(tts_env) root@hostname:~/TTS_Project/TTS#', command: 'python TTS/bin/train_tts.py --config_path configs/config_ada.json' },
+                        { title: '学習再開', description: '中断した学習を、保存されたチェックポイントから再開します。', path: '(tts_env) root@hostname:~/TTS_Project/TTS#', command: 'python TTS/bin/train_tts.py --continue_path ada-voice-model/[学習フォルダ名]/' }
+                    ]
+                }
+            ];
+
+            const modal = document.getElementById('ai-modal');
+            const modalBg = modal.querySelector('.modal-bg');
+            const modalContent = modal.querySelector('.modal-content');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+            const modalCloseBtn = document.getElementById('modal-close-btn');
+            
+            const apiKey = ""; 
+
+            async function callGemini(prompt, maxRetries = 3) {
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                
+                let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                const payload = { contents: chatHistory };
+
+                for (let i = 0; i < maxRetries; i++) {
+                    try {
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+
+                        const result = await response.json();
+                        if (result.candidates && result.candidates.length > 0 &&
+                            result.candidates[0].content && result.candidates[0].content.parts &&
+                            result.candidates[0].content.parts.length > 0) {
+                            return result.candidates[0].content.parts[0].text;
+                        } else {
+                            throw new Error('Invalid response structure from Gemini API');
+                        }
+                    } catch (error) {
+                        if (i === maxRetries - 1) {
+                            console.error('Error calling Gemini API:', error);
+                            return 'AIの分析中にエラーが発生しました。しばらくしてからもう一度お試しください。';
+                        }
+                        await new Promise(res => setTimeout(res, Math.pow(2, i) * 1000));
+                    }
+                }
+            }
+
+            function showModal() {
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modalBg.classList.remove('opacity-0');
+                    modalContent.classList.remove('opacity-0', 'scale-95');
+                }, 10);
+            }
+
+            function hideModal() {
+                modalBg.classList.add('opacity-0');
+                modalContent.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            }
+            
+            modalBg.addEventListener('click', hideModal);
+            modalCloseBtn.addEventListener('click', hideModal);
+
+            function setModalLoading() {
+                modalBody.innerHTML = `<div class="flex justify-center items-center h-32"><div class="spinner w-12 h-12 rounded-full border-4"></div></div>`;
+            }
+
+            function setModalContent(title, content) {
+                modalTitle.textContent = title;
+                modalBody.innerHTML = `<div class="prose max-w-none text-slate-700">${content.replace(/\n/g, '<br>')}</div>`;
+            }
+
+            const apiKeyErrorMessage = '<h3>AI分析エラー</h3><p class="mt-4">Gemini APIキーが設定されていません。</p><p class="mt-2">この機能をローカル環境で実行するには、HTMLファイル内の`callGemini`関数の直前にある`apiKey`変数に、ご自身のAPIキーを設定してください。</p>';
+
+            document.getElementById('generate-summary-btn').addEventListener('click', async () => {
+                if (apiKey === "") {
+                    setModalContent('APIキー未設定', apiKeyErrorMessage);
+                    showModal();
+                    return;
+                }
+                modalTitle.textContent = 'AIによるプロジェクト総括レポート';
+                setModalLoading();
+                showModal();
+
+                const wbsText = wbsData.map(p => `${p.id}. ${p.name}:\n${p.children.map(c => `  - ${c.name}`).join('\n')}`).join('\n\n');
+                const scheduleText = scheduleData.map(t => `- ${t.task}: ${t.start} to ${t.end}`).join('\n');
+                const issuesText = issueData.map(i => `- 課題 #${i.id} ${i.title}: ${i.desc}`).join('\n');
+
+                const prompt = `
+あなたは優秀なプロジェクトマネージャーです。以下のプロジェクトデータを分析し、プロフェッショナルな日本語のポストモーテム（事後検証）レポートを作成してください。
+
+レポートには以下の要素を含めてください：
+1.  **プロジェクト概要:** プロジェクトの目的と成果を簡潔に要約。
+2.  **成功要因:** 計画通りに進んだ点や、特筆すべき成果を分析。
+3.  **直面した課題と学び:** 発生した主要な課題をいくつか挙げ、その解決プロセスから得られた教訓を記述。
+4.  **将来への提言:** 次のプロジェクトに活かすべき具体的な改善点を提案。
+
+---
+**【プロジェクトデータ】**
+
+**1. WBS（作業分解構成図）**
+${wbsText}
+
+**2. 作業計画**
+${scheduleText}
+
+**3. 発生した課題一覧**
+${issuesText}
+---
+`;
+                const result = await callGemini(prompt);
+                setModalContent('AIによるプロジェクト総括レポート', result);
+            });
+
+            function renderWBS() {
+                const list = document.getElementById('wbs-list');
+                list.innerHTML = wbsData.map(item => `
+                    <li>
+                        <span class="wbs-toggle font-bold cursor-pointer">${item.id}. ${item.name}</span>
+                        <ul class="pl-6 mt-1 hidden space-y-1">
+                            ${item.children.map(child => `<li>${child.id}. ${child.name}</li>`).join('')}
+                        </ul>
+                    </li>
+                `).join('');
+                
+                list.querySelectorAll('.wbs-toggle').forEach(toggle => {
+                    toggle.addEventListener('click', () => {
+                        toggle.classList.toggle('open');
+                        toggle.nextElementSibling.classList.toggle('hidden');
+                    });
+                });
+            }
+
+            function renderProcedures() {
+                const container = document.getElementById('procedures-container');
+                container.innerHTML = proceduresData.map(phase => {
+                    if (phase.isIntro) {
+                        return `
+                            <div class="mb-4 bg-slate-100 p-4 rounded-lg">
+                                <h4 class="font-bold text-md text-slate-800 mb-2">${phase.phase}</h4>
+                                <p class="text-sm text-slate-600">${phase.description}</p>
+                            </div>
+                        `;
+                    }
+                    return `
+                        <div class="mb-4">
+                            <h4 class="font-bold text-md text-slate-800 mb-2">${phase.phase}</h4>
+                            <div class="space-y-2">
+                                ${phase.steps.map((step) => {
+                                    const commandWithPaths = step.command.split('\n').map(line => `<span class="code-path">${step.path}</span> ${line}`).join('\n');
+                                    return `
+                                    <div class="bg-slate-100 p-3 rounded-md">
+                                        <p class="text-sm font-medium text-slate-700">${step.title}</p>
+                                        <p class="text-xs text-slate-500 mt-1">${step.description}</p>
+                                        <div class="code-block mt-2">
+                                            <pre class="bg-slate-800 text-white text-xs p-3 rounded-md overflow-x-auto"><code>${commandWithPaths}</code></pre>
+                                            <button class="copy-btn" data-command="${encodeURIComponent(step.command)}">コピー</button>
+                                        </div>
+                                    </div>
+                                `}).join('')}
+                            </div>
+                        </div>
+                    `
+                }).join('');
+
+                container.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('copy-btn')) {
+                        const command = decodeURIComponent(e.target.dataset.command);
+                        const tempTextarea = document.createElement('textarea');
+                        tempTextarea.value = command;
+                        document.body.appendChild(tempTextarea);
+                        tempTextarea.select();
+                        try {
+                            document.execCommand('copy');
+                            e.target.textContent = 'コピーしました！';
+                            setTimeout(() => {
+                                e.target.textContent = 'コピー';
+                            }, 2000);
+                        } catch (err) {
+                            console.error('コピーに失敗しました', err);
+                            e.target.textContent = '失敗';
+                        }
+                        document.body.removeChild(tempTextarea);
+                    }
+                });
+            }
+
+            function renderScheduleChart() {
+                const ctx = document.getElementById('scheduleChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: scheduleData.map(d => d.task),
+                        datasets: [{
+                            label: 'タスク期間',
+                            data: scheduleData.map(d => ({ x: [new Date(d.start), new Date(d.end)], y: d.task })),
+                            backgroundColor: (context) => {
+                                const tasks = scheduleData.map(d => d.task);
+                                const index = tasks.indexOf(context.raw.y);
+                                const colors = ['#14b8a6', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6', '#ec4899', '#65a30d'];
+                                return colors[index % colors.length];
+                            },
+                            borderRadius: 4, borderSkipped: false,
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                type: 'time',
+                                time: { unit: 'day', tooltipFormat: 'yyyy/MM/dd', displayFormats: { day: 'M/d' } },
+                                min: '2025-07-29', max: '2025-08-10',
+                                grid: { color: '#e2e8f0' }, ticks: { color: '#64748b' }
+                            },
+                            y: {
+                                grid: { display: false },
+                                ticks: { color: '#64748b', font: { size: 14 } }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const start = new Date(context.raw.x[0]).toLocaleDateString('ja-JP');
+                                        const end = new Date(context.raw.x[1]).toLocaleDateString('ja-JP');
+                                        return `${context.dataset.label}: ${start} - ${end}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function renderIssueTimeline() {
+                const timeline = document.getElementById('issue-timeline');
+                timeline.innerHTML = issueData.map((issue) => `
+                    <div class="mb-8 flex items-start">
+                        <div class="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full bg-teal-500"></div>
+                        <div class="ml-6 w-full">
+                            <div class="issue-card bg-white p-4 rounded-lg shadow-md border-l-teal-500">
+                                <p class="font-bold text-slate-800">課題 #${issue.id}: ${issue.title}</p>
+                                <div class="mt-2 text-slate-600 text-sm">
+                                    <strong>解決策:</strong> ${issue.desc}
+                                </div>
+                                <button data-issue-id="${issue.id}" class="analyze-issue-btn mt-3 bg-slate-200 text-slate-700 text-xs font-bold py-1 px-3 rounded-full hover:bg-slate-300 transition-colors">
+                                    ✨ AIで分析
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                timeline.querySelectorAll('.analyze-issue-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        if (apiKey === "") {
+                            setModalContent('APIキー未設定', apiKeyErrorMessage);
+                            showModal();
+                            return;
+                        }
+                        const issueId = e.target.getAttribute('data-issue-id');
+                        const issue = issueData.find(i => i.id === issueId);
+                        if (!issue) return;
+
+                        const modalTitleText = `課題 #${issue.id} のAI分析`;
+                        modalTitle.textContent = modalTitleText;
+                        setModalLoading();
+                        showModal();
+                        
+                        const prompt = `
+あなたは優秀なプロジェクトマネージャー兼リスクアナリストです。以下のプロジェクトで発生した課題について、プロフェッショナルな視点から日本語で分析してください。
+
+**分析対象の課題:**
+- **タイトル:** ${issue.title}
+- **解決策の概要:** ${issue.desc}
+
+**分析内容として、以下の3つの要素を簡潔に含めてください:**
+1.  **根本原因の推察:** この問題が起きた真の原因は何だったと考えられるか。
+2.  **予防策の提案:** 将来同様の問題を防ぐために、どのような対策が考えられるか。
+3.  **関連リスク:** この課題から発展して起こりうる、他の潜在的なリスクは何か。
+`;
+                        const result = await callGemini(prompt);
+                        setModalContent(modalTitleText, result);
+                    });
+                });
+            }
+
+            function setupScrollspy() {
+                const sections = document.querySelectorAll('main section');
+                const navLinks = document.querySelectorAll('.nav-link');
+
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            navLinks.forEach(link => {
+                                link.classList.remove('active');
+                                if (link.getAttribute('href').substring(1) === entry.target.id) {
+                                    link.classList.add('active');
+                                }
+                            });
+                        }
+                    });
+                }, { rootMargin: '-40% 0px -60% 0px' });
+
+                sections.forEach(section => observer.observe(section));
+                
+                navLinks.forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const targetId = link.getAttribute('href');
+                        const targetElement = document.querySelector(targetId);
+                        if(targetElement) {
+                            const offset = 80;
+                            const bodyRect = document.body.getBoundingClientRect().top;
+                            const elementRect = targetElement.getBoundingClientRect().top;
+                            const elementPosition = elementRect - bodyRect;
+                            const offsetPosition = elementPosition - offset;
+                            
+                            window.scrollTo({
+                                top: offsetPosition,
+                                behavior: 'smooth'
+                            });
+                        }
+                    });
+                });
+            }
+
+            renderWBS();
+            renderProcedures();
+            renderScheduleChart();
+            renderIssueTimeline();
+            setupScrollspy();
+        });
+    </script>
+</body>
+</html>
