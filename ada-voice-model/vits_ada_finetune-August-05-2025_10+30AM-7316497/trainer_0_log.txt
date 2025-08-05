@@ -1,0 +1,67 @@
+ > Training Environment:
+ | > Backend: Torch
+ | > Mixed precision: True
+ | > Precision: fp16
+ | > Current device: 0
+ | > Num. of GPUs: 1
+ | > Num. of CPUs: 12
+ | > Num. of Torch Threads: 6
+ | > Torch seed: 54321
+ | > Torch CUDNN: True
+ | > Torch CUDNN deterministic: False
+ | > Torch CUDNN benchmark: False
+ | > Torch TF32 MatMul: False
+ > Start Tensorboard: tensorboard --logdir=ada-voice-model/vits_ada_finetune-August-05-2025_10+30AM-7316497
+
+ > Model has 82085757 parameters
+
+[4m[1m > EPOCH: 0/10000[0m
+ --> ada-voice-model/vits_ada_finetune-August-05-2025_10+30AM-7316497
+
+[1m > TRAINING (2025-08-05 10:30:12) [0m
+
+[1m   --> TIME: 2025-08-05 10:30:15 -- STEP: 0/24 -- GLOBAL_STEP: 0[0m
+     | > loss_disc: 6.057769775390625  (6.057769775390625)
+     | > loss_disc_real_0: 0.990146279335022  (0.990146279335022)
+     | > loss_disc_real_1: 0.9658225178718567  (0.9658225178718567)
+     | > loss_disc_real_2: 1.028720498085022  (1.028720498085022)
+     | > loss_disc_real_3: 1.0414166450500488  (1.0414166450500488)
+     | > loss_disc_real_4: 0.9880937933921814  (0.9880937933921814)
+     | > loss_disc_real_5: 1.0423202514648438  (1.0423202514648438)
+     | > loss_0: 6.057769775390625  (6.057769775390625)
+     | > grad_norm_0: 0  (0)
+     | > loss_gen: 6.06168270111084  (6.06168270111084)
+     | > loss_kl: 246.9049835205078  (246.9049835205078)
+     | > loss_feat: 2.9825596809387207  (2.9825596809387207)
+     | > loss_mel: 130.27268981933594  (130.27268981933594)
+     | > loss_duration: 2.2260313034057617  (2.2260313034057617)
+     | > amp_scaler: 32768.0  (32768.0)
+     | > loss_1: 388.44793701171875  (388.44793701171875)
+     | > grad_norm_1: 0  (0)
+     | > current_lr_0: 0.0002 
+     | > current_lr_1: 0.0002 
+     | > step_time: 2.5757  (2.575709581375122)
+     | > loader_time: 0.9741  (0.9740519523620605)
+
+
+[1m > EVALUATION [0m
+
+
+  [1m--> EVAL PERFORMANCE[0m
+     | > avg_loader_time: 0.11816596984863281 [0m(+0)
+     | > avg_loss_disc: 2.4189679622650146 [0m(+0)
+     | > avg_loss_disc_real_0: 0.27653712034225464 [0m(+0)
+     | > avg_loss_disc_real_1: 0.13450975716114044 [0m(+0)
+     | > avg_loss_disc_real_2: 0.14579042792320251 [0m(+0)
+     | > avg_loss_disc_real_3: 0.12731383740901947 [0m(+0)
+     | > avg_loss_disc_real_4: 0.15875202417373657 [0m(+0)
+     | > avg_loss_disc_real_5: 0.08145987242460251 [0m(+0)
+     | > avg_loss_0: 2.4189679622650146 [0m(+0)
+     | > avg_loss_gen: 1.5724190473556519 [0m(+0)
+     | > avg_loss_kl: 12.680712699890137 [0m(+0)
+     | > avg_loss_feat: 2.665365219116211 [0m(+0)
+     | > avg_loss_mel: 49.038536071777344 [0m(+0)
+     | > avg_loss_duration: 0.8918507695198059 [0m(+0)
+     | > avg_loss_1: 66.84888458251953 [0m(+0)
+
+ > BEST MODEL : ada-voice-model/vits_ada_finetune-August-05-2025_10+30AM-7316497/best_model_24.pth
