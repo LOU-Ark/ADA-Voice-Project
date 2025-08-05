@@ -1,0 +1,46 @@
+{
+    "run_name": "vits_ada_finetune",
+    "output_path": "ada-voice-model/",
+    "model": "VITS",
+    "model_args": {
+        "use_sdp": false
+    },
+    "datasets": [
+        {
+            "name": "ada_voice",
+            "formatter": "ljspeech",
+            "path": "/root/TTS_Project/TTS/my_ada_voice/",
+            "meta_file_train": "metadata.csv"
+        }
+    ],
+    "characters": {
+        "characters_class": "TTS.tts.models.vits.VitsCharacters",
+        "pad": "_",
+        "eos": "&",
+        "bos": "*",
+        "blank": "#",
+        "punctuations": "、。？！ー…",
+        "characters": ",012345789ACDEKLOV_bcekmnrstu…♪　、。」あぃいうぇえおかがきぎくぐけげこごさざしじすせぜそぞただちっつづてでとどなにねのはばぱひびふぶへべほぼぽまみむめもゃやゅゆょよらりるれろわをんー払！％＋？"
+    },
+    "audio": {
+        "sample_rate": 22050,
+        "do_trim_silence": true,
+        "trim_db": 60
+    },
+    "batch_size": 8,
+    "eval_batch_size": 8,
+    "num_loader_workers": 4,
+    "num_eval_loader_workers": 4,
+    "epochs": 10000,
+    "learning_rate": 0.0001,
+    "save_step": 1000,
+    "print_step": 25,
+    "eval_step": 1000,
+    "tensorboard": true,
+    "mixed_precision": true,
+    "use_phonemes": false,
+    "test_sentences": [
+        "こんにちは、わたしのなまえはえいだです。",
+        "これはてすとぶんしょうです。"
+    ]
+}
