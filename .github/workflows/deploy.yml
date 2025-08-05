@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:   # 手動実行も可能
+  workflow_dispatch:    # 手動実行も可能
 
 permissions:
   contents: read
@@ -15,16 +15,12 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-        path: 'docs' # ここを'docs'に変更する
-        
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Replace API Key Placeholder
         run: |
+          # index.htmlがdocsディレクトリにある場合、パスをdocs/index.htmlに修正
           sed -i "s|GEMINI_API_KEY_PLACEHOLDER|${{ secrets.GEMINI_API_KEY }}|g" docs/index.html
           
       - name: Setup Pages
@@ -33,7 +29,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
+          # index.htmlがdocsディレクトリにある場合、アップロードするパスをdocsに修正
+          path: 'docs' 
 
       - name: Deploy to GitHub Pages
         id: deployment
