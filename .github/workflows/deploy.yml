@@ -14,7 +14,7 @@ jobs:
 
       - name: Replace API Key Placeholder
         run: |
-          sed -i "s|GEMINI_API_KEY_PLACEHOLDER|${{ secrets.GEMINI_API_KEY }}|g" index.html
+          sed -i "s|GEMINI_API_KEY_PLACEHOLDER|${{ secrets.GEMINI_API_KEY }}|g" docs/index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
