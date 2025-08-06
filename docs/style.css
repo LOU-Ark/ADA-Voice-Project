@@ -244,7 +244,36 @@ body {
     color: #134e4a; /* Teal-900 */
 }
 
-/* ===== Markdown表示用のスタイル ===== */
+/* ===== Markdownのコード表示用スタイル ===== */
+
+/* pre: コードブロック全体を囲むコンテナ */
+.bot-message pre {
+    background-color: #1e293b; /* Slate-800 */
+    color: #e2e8f0; /* Slate-200 */
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+    overflow-x: auto; /* 横に長い場合はスクロールバーを表示 */
+}
+
+/* code: コードテキストそのもの */
+.bot-message pre code {
+    background-color: transparent; /* 親の背景色を継承 */
+    padding: 0;
+}
+
+/* `バッククォート`で囲まれたインラインコード */
+.bot-message :not(pre) > code {
+    background-color: #e2e8f0; /* Slate-200 */
+    color: #c2410c; /* Amber-700 */
+    padding: 0.2em 0.4em;
+    margin: 0;
+    font-size: 85%;
+    border-radius: 3px;
+    font-family: 'Courier New', Courier, monospace;
+}
+
 .bot-message ul,
 .bot-message ol {
     padding-left: 1.5rem; /* リストのインデント */
