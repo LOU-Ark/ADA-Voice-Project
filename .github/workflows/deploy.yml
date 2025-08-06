@@ -26,7 +26,7 @@ jobs:
           echo "----------------------------------------------------"
 
       - name: Replace API Key
-        run: sed -i "s|GEMINI_API_KEY_PLACEHOLDER|${{ secrets.GEMINI_API_KEY }}|g" docs/index.html docs/script.js
+        run: sed -i "s|GEMINI_API_KEY_PLACEHOLDER|${{ secrets.GEMINI_API_KEY }}|g" docs/script.js
         
       # ▼▼▼▼▼ 修正後のデバッグステップ 2 ▼▼▼▼▼
       - name: 'Debug: Display script.js content AFTER replacement'
