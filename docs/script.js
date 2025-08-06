@@ -262,15 +262,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     async function callGeminiForAnalysis(prompt) {
-        if (apiKey === 'GEMINI_API_KEY_PLACEHOLDER') {
-            return "エラー: APIキーが設定されていません。GitHub Actionsで正しくキーが設定されているか確認してください。";
-        }
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
-        const payload = { contents: [{ parts: [{ text: prompt }] }] };
-
-        const response = await fetch(apiUrl, {
+        const proxyUrl = 'https://gemini-proxy.lou-ark.workers.dev';
+    
+        // APIに送るデータ本体
+        const payload = {
+            contents: [{
+                parts: [{
+                    text: prompt
+                }]
+            }]
+        };
+    
+        // Workerにリクエストを送信
+        const response = await fetch(proxyUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify(payload)
         });
 
@@ -357,13 +365,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     async function getGeminiResponseForChat(userMessage) {
-        // ★★★ 変更点：グローバルなapiKeyを直接参照し、チェックする ★★★
-        if (apiKey === 'GEMINI_API_KEY_PLACEHOLDER') {
-            return "AIアシスタントは現在利用できません。ウェブサイトの管理者が設定を確認中です。";
-        }
+        const proxyUrl = 'https://ここにあなたのWorkerのURLを貼り付け'; // 例: https://gemini-proxy.lou-ark.workers.dev
     
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
-        
         const context = getPageContext();
         const systemInstruction = {
             role: "model",
@@ -381,9 +384,12 @@ document.addEventListener('DOMContentLoaded', () => {
             },
         };
     
-        const response = await fetch(apiUrl, {
+        // Workerにリクエストを送信
+        const response = await fetch(proxyUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify(payload)
         });
     
