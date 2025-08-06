@@ -243,3 +243,27 @@ body {
 #chatbot-send-btn:hover {
     color: #134e4a; /* Teal-900 */
 }
+
+/* ===== Markdown表示用のスタイル ===== */
+.bot-message ul,
+.bot-message ol {
+    padding-left: 1.5rem; /* リストのインデント */
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.bot-message li {
+    margin-bottom: 0.25rem; /* リスト項目の間隔 */
+}
+
+.bot-message p {
+    margin-bottom: 0.75rem; /* 段落の間隔 */
+}
+.bot-message p:last-child {
+    margin-bottom: 0;
+}
+
+.bot-message strong {
+    font-weight: 600; /* 太字を少し強調 */
+    color: #1e293b; /* slate-800 */
+}
