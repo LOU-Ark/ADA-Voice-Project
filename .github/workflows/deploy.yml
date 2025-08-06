@@ -18,23 +18,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ▼▼▼▼▼ 修正後のデバッグステップ 1 ▼▼▼▼▼
-      - name: 'Debug: Display script.js content BEFORE replacement'
-        run: |
-          echo "--- Content of docs/script.js BEFORE replacement ---"
-          cat docs/script.js | grep "const apiKey"
-          echo "----------------------------------------------------"
-
-      - name: Replace API Key
-        run: sed -i "s|GEMINI_API_KEY_PLACEHOLDER|${{ secrets.GEMINI_API_KEY }}|g" docs/script.js
-        
-      # ▼▼▼▼▼ 修正後のデバッグステップ 2 ▼▼▼▼▼
-      - name: 'Debug: Display script.js content AFTER replacement'
-        run: |
-          echo "--- Content of docs/script.js AFTER replacement ---"
-          cat docs/script.js | grep "const apiKey"
-          echo "---------------------------------------------------"
-
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
