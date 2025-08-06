@@ -357,23 +357,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     async function getGeminiResponseForChat(userMessage) {
-        // このプレースホルダーはGitHub Actionsによって置換されます
-        const chatApiKey = apiKey; // AI分析モーダルと同じAPIキーを使用
-
-        if (chatApiKey === 'GEMINI_API_KEY_PLACEHOLDER') {
+        // ★★★ 変更点：グローバルなapiKeyを直接参照し、チェックする ★★★
+        if (apiKey === 'GEMINI_API_KEY_PLACEHOLDER') {
             return "AIアシスタントは現在利用できません。ウェブサイトの管理者が設定を確認中です。";
         }
-
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${chatApiKey}`;
+    
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
         
         const context = getPageContext();
         const systemInstruction = {
             role: "model",
             parts: [{ text: `あなたはウェブページの解説アシスタントです。以下のページ内容を参考に、ユーザーの質問に親切かつ簡潔に日本語で答えてください。\n\n[ウェブページの内容]\n${context}` }]
         };
-
+    
         chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
-
+    
         const payload = {
             contents: [systemInstruction, ...chatHistory],
             generationConfig: {
@@ -382,33 +380,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 maxOutputTokens: 512,
             },
         };
-
+    
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-
+    
         if (!response.ok) {
             const errorData = await response.json();
             console.error("API Error:", errorData);
             throw new Error(errorData.error.message || 'API request failed');
         }
-
+    
         const data = await response.json();
         
         if (!data.candidates?.[0]?.content) {
             console.error("Invalid API Response:", data);
             throw new Error("AIからの有効な応答がありませんでした。");
         }
-
+    
         const botResponseText = data.candidates[0].content.parts[0].text;
         
         chatHistory.push({ role: "model", parts: [{ text: botResponseText }] });
         if (chatHistory.length > 8) {
             chatHistory.splice(0, 2); 
         }
-
+    
         return botResponseText;
     }
 });
