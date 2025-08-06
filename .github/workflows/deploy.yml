@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:    # 手動実行も可能
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -18,26 +18,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ▼▼▼▼▼ デバッグステップ 1: 置換前のscript.jsの内容を表示 ▼▼▼▼▼
+      # ▼▼▼▼▼ 修正後のデバッグステップ 1 ▼▼▼▼▼
       - name: 'Debug: Display script.js content BEFORE replacement'
         run: |
           echo "--- Content of docs/script.js BEFORE replacement ---"
           cat docs/script.js | grep "const apiKey"
-          cat docs/script.js | grep "const chatApiKey"
           echo "----------------------------------------------------"
-      # ▲▲▲▲▲ ここまでデバッグステップ 1 ▲▲▲▲▲
 
       - name: Replace API Key
         run: sed -i "s|GEMINI_API_KEY_PLACEHOLDER|${{ secrets.GEMINI_API_KEY }}|g" docs/index.html docs/script.js
         
-      # ▼▼▼▼▼ デバッグステップ 2: 置換後のscript.jsの内容を表示 ▼▼▼▼▼
+      # ▼▼▼▼▼ 修正後のデバッグステップ 2 ▼▼▼▼▼
       - name: 'Debug: Display script.js content AFTER replacement'
         run: |
           echo "--- Content of docs/script.js AFTER replacement ---"
           cat docs/script.js | grep "const apiKey"
-          cat docs/script.js | grep "const chatApiKey"
           echo "---------------------------------------------------"
-      # ▲▲▲▲▲ ここまでデバッグステップ 2 ▲▲▲▲▲
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
