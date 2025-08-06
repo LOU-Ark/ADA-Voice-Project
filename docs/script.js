@@ -330,7 +330,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function addMessageToUI(sender, text) {
         const messageElement = document.createElement('div');
         messageElement.classList.add('chat-message', sender === 'user' ? 'user-message' : 'bot-message');
+    if (sender === 'bot') {
+        // ▼▼▼ 変更点：ボットのメッセージの場合、Marked.jsでHTMLに変換する ▼▼▼
+        messageElement.innerHTML = marked.parse(text);
+    } else {
+        // ユーザーのメッセージはそのまま表示（安全のため）
         messageElement.textContent = text;
+    }
+        
         messagesContainer.appendChild(messageElement);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
         return messageElement;
