@@ -262,7 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     async function callGeminiForAnalysis(prompt) {
-        const proxyUrl = 'https://gemini-proxy.lou-ark.workers.dev';
+        const proxyUrl = 'https://gemini-proxy.loutarma.workers.dev';
     
         // APIに送るデータ本体
         const payload = {
@@ -365,7 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     async function getGeminiResponseForChat(userMessage) {
-        const proxyUrl = 'https://ここにあなたのWorkerのURLを貼り付け'; // 例: https://gemini-proxy.lou-ark.workers.dev
+        const proxyUrl = 'https://gemini-proxy.loutarma.workers.dev';
     
         const context = getPageContext();
         const systemInstruction = {
